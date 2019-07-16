@@ -1,1 +1,92 @@
+#DNS Records
+
+#Quick Diagnostic
+
+1- for Services A Records we have:
+
+A- “Normal” (not headless) Services are assigned a DNS A record for a name of the form my-svc.my-namespace.svc.cluster.local
+    Thisresolves to the cluster IP of the Service.
+    
+B- “Headless” (without a cluster IP) Services are also assigned a DNS A record for a name of the form my-svc.my-namespace.svc.cluster.local
+    This resolves to the set of IPs of the pods selected by the Service.
+    
+    
+ 2- For Pods A Records we have:
+ 
+A- A Records: pod-ip-address.my-namespace.pod.cluster.local.
+    For example, a pod with IP 1.2.3.4 in the namespace default with a DNS name of cluster.local would have an entry: 1-2-3-4.default.pod.cluster.local.
+
+
+B- A Records and hostname based on Pod’s hostname and subdomain fields
+
+**The Pod hostname is the Pod’s metadata.name value**
+**With v1.2, users can specify a Pod annotation, pod.beta.kubernetes.io/hostname, to specify what the Pod’s hostname should be**
+**pod.beta.kubernetes.io/hostname: my-pod-name, the Pod will have its hostname set to “my-pod-name”.**
+
+==============================================================================================================================
+
+
+* Check the local DNS configuration: $kubectl exec busybox cat /etc/resolv.conf.
+* dnsPolicy:By default, DNS policy for a pod is ‘ClusterFirst’. So pods running with hostNetwork cannot resolve DNS names. To have DNS options set along with hostNetwork, you should specify DNS policy explicitly to ‘ClusterFirstWithHostNet’. Update the busybox.yaml as following
+
+*From K8S official doc as is:
+
+Quick diagnosis
+Errors such as the following indicate a problem with the kube-dns add-on or associated Services:
+
+$ kubectl exec -ti busybox -- nslookup kubernetes.default
+Server:    10.0.0.10
+Address 1: 10.0.0.10
+
+nslookup: can't resolve 'kubernetes.default'
+or
+
+$ kubectl exec -ti busybox -- nslookup kubernetes.default
+Server:    10.0.0.10
+Address 1: 10.0.0.10 kube-dns.kube-system.svc.cluster.local
+
+nslookup: can't resolve 'kubernetes.default'
+Check if the DNS pod is running
+Use the kubectl get pods command to verify that the DNS pod is running.
+
+kubectl get pods --namespace=kube-system -l k8s-app=kube-dns
+You should see something like:
+
+NAME                                                       READY     STATUS    RESTARTS   AGE
+...
+kube-dns-v19-ezo1y                                         3/3       Running   0           1h
+...
+If you see that no pod is running or that the pod has failed/completed, the DNS add-on may not be deployed by default in your current environment and you will have to deploy it manually.
+
+Check for Errors in the DNS pod
+Use kubectl logs command to see logs for the DNS daemons.
+
+kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c kubedns
+kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c dnsmasq
+kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c sidecar
+See if there is any suspicious log. W, E, F letter at the beginning represent Warning, Error and Failure. Please search for entries that have these as the logging level and use kubernetes issues to report unexpected errors.
+
+Is DNS service up?
+Verify that the DNS service is up by using the kubectl get service command.
+
+kubectl get svc --namespace=kube-system
+You should see:
+
+NAME                    CLUSTER-IP     EXTERNAL-IP   PORT(S)             AGE
+...
+kube-dns                10.0.0.10      <none>        53/UDP,53/TCP        1h
+...
+If you have created the service or in the case it should be created by default but it does not appear, see this debugging services page for more information.
+
+Are DNS endpoints exposed?
+You can verify that DNS endpoints are exposed by using the kubectl get endpoints command.
+
+kubectl get ep kube-dns --namespace=kube-system
+You should see something like:
+
+NAME       ENDPOINTS                       AGE
+kube-dns   10.180.3.17:53,10.180.3.17:53    1h
+If you do not see the endpoints, see endpoints section in the debugging services documentation.
+
+For additional Kubernetes DNS examples, see the cluster-dns examples in the Kubernetes GitHub repository.
 

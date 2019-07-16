@@ -1,4 +1,4 @@
-# K8S-DNS-Sheet
+# K8S-DNS-Sheet-num1
 
 
 1- By default most Kubernetes clusters automatically configure an internal DNS service to provide a lightweight mechanism for service discovery.

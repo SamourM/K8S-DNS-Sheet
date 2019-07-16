@@ -1,6 +1,7 @@
 #DNS Records
-
 #Quick Diagnostic
+#CoreDNS/ Configmap
+
 
 1- for Services A Records we have:
 
@@ -11,7 +12,7 @@ B- “Headless” (without a cluster IP) Services are also assigned a DNS A reco
     This resolves to the set of IPs of the pods selected by the Service.
     
     
- 2- For Pods A Records we have:
+2- For Pods A Records we have:
  
 A- A Records: pod-ip-address.my-namespace.pod.cluster.local.
     For example, a pod with IP 1.2.3.4 in the namespace default with a DNS name of cluster.local would have an entry: 1-2-3-4.default.pod.cluster.local.
@@ -19,36 +20,39 @@ A- A Records: pod-ip-address.my-namespace.pod.cluster.local.
 
 B- A Records and hostname based on Pod’s hostname and subdomain fields
 
-**The Pod hostname is the Pod’s metadata.name value**
-**With v1.2, users can specify a Pod annotation, pod.beta.kubernetes.io/hostname, to specify what the Pod’s hostname should be**
-**pod.beta.kubernetes.io/hostname: my-pod-name, the Pod will have its hostname set to “my-pod-name”.**
+3- The Pod hostname is the Pod’s metadata.name value
+
+4- With v1.2, users can specify a Pod annotation, pod.beta.kubernetes.io/hostname, to specify what the Pod’s hostname should be**
+
+5- pod.beta.kubernetes.io/hostname: my-pod-name, the Pod will have its hostname set to “my-pod-name”.
 
 
-**CoreDNS is a DNS server that is modular and pluggable, and each plugin adds new functionality to CoreDNS. 
+6- CoreDNS is a DNS server that is modular and pluggable, and each plugin adds new functionality to CoreDNS. 
 This can be configured by maintaining a Corefile, which is the CoreDNS configuration file. 
-A cluster administrator can modify the ConfigMap for the CoreDNS Corefile to change how service discovery works.**
+A cluster administrator can modify the ConfigMap for the CoreDNS Corefile to change how service discovery works.
 
-**Custom upstream nameservers and stub domains do not affect Pods with a dnsPolicy set to “Default” or “None”.
+7- Custom upstream nameservers and stub domains do not affect Pods with a dnsPolicy set to “Default” or “None”.
 If a Pod’s dnsPolicy is set to “ClusterFirst”,
 its name resolution is handled differently, depending on whether stub-domain and upstream DNS servers are configured.**
 
 
-**Without custom configurations: Any query that does not match the configured cluster domain suffix, such as “www.kubernetes.io”, 
-is forwarded to the upstream nameserver inherited from the node.**
+8- Without custom configurations: Any query that does not match the configured cluster domain suffix, such as “www.kubernetes.io”, 
+is forwarded to the upstream nameserver inherited from the node.
 
 
-**With custom configurations: 
+9- With custom configurations: 
 If stub domains and upstream DNS servers are configured, DNS queries are routed according to the following flow:
-1- Kube-dns
-2- with stub domain suffix> Custom DNS resolver.
-3- without stub domain suffix> Upstream DNS. e.g. 8.8.8.8
+A- Kube-dns
+B- with stub domain suffix> Custom DNS resolver.
+C- without stub domain suffix> Upstream DNS. e.g. 8.8.8.8
 ==============================================================================================================================
 
+Below is from the official doc as is:
 
-* Check the local DNS configuration: $kubectl exec busybox cat /etc/resolv.conf.
-* dnsPolicy:By default, DNS policy for a pod is ‘ClusterFirst’. So pods running with hostNetwork cannot resolve DNS names. To have DNS options set along with hostNetwork, you should specify DNS policy explicitly to ‘ClusterFirstWithHostNet’. Update the busybox.yaml as following
+*Check the local DNS configuration: $kubectl exec busybox cat /etc/resolv.conf.
+*dnsPolicy:By default, DNS policy for a pod is ‘ClusterFirst’. So pods running with hostNetwork cannot resolve DNS names. To have DNS options set along with hostNetwork, you should specify DNS policy explicitly to ‘ClusterFirstWithHostNet’. Update the busybox.yaml as following
 *If a Pod’s dnsPolicy is set to “default”, it inherits the name resolution configuration from the node that the Pod runs on. The Pod’s DNS resolution should behave the same as the node.
-*From K8S official doc as is:
+
 
 Quick diagnosis
 Errors such as the following indicate a problem with the kube-dns add-on or associated Services:
@@ -107,5 +111,4 @@ NAME       ENDPOINTS                       AGE
 kube-dns   10.180.3.17:53,10.180.3.17:53    1h
 If you do not see the endpoints, see endpoints section in the debugging services documentation.
 
-For additional Kubernetes DNS examples, see the cluster-dns examples in the Kubernetes GitHub repository.
 
